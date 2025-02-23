@@ -4,6 +4,8 @@ A Telegram bot that automatically process images and videos to meet Telegram's r
 
 This bot is designed with a session-based workflow: after choosing between sticker or emoji creation mode, it will continue processing all incoming media files in that mode until the user explicitly returns to the mode selection menu. This allows for efficient batch processing of multiple files without having to repeatedly select the desired output type.
 
+If you find this project helpful, please consider giving it a star ⭐ It helps others discover the project and motivates further development.
+
 ## Table of Contents
 - [Requirements](#requirements)
 - [Installation](#installation)
