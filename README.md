@@ -1,8 +1,10 @@
 # Telegram Sticker Maker Bot
 
-A Telegram bot that automatically processes images and videos into stickers and emoji that comply with Telegram's requirements. The bot maintains aspect ratios while resizing media to the correct dimensions and handles format conversion automatically.
+A Telegram bot that automatically process images and videos to meet Telegram's requirements for creating stickers and emojis in @Stickers. The bot maintains aspect ratios while resizing media to the correct dimensions and handles format conversion automatically.
 
 This bot is designed with a session-based workflow: after choosing between sticker or emoji creation mode, it will continue processing all incoming media files in that mode until the user explicitly returns to the mode selection menu. This allows for efficient batch processing of multiple files without having to repeatedly select the desired output type.
+
+If you find this project helpful, please consider giving it a star ⭐ It helps others discover the project and motivates further development.
 
 ## Table of Contents
 - [Requirements](#requirements)
