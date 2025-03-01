@@ -72,7 +72,8 @@ async def on_startup(bot: Bot):
     
     await bot.set_webhook(
         url=f"{webhook_url}{WEBHOOK_PATH}",
-        drop_pending_updates=True
+        drop_pending_updates=True,
+        secret_token=BOT_TOKEN[:50]  # Use same secret token as in handler
     )
     logger.info(f"Webhook has been set to: {webhook_url}{WEBHOOK_PATH}")
 
