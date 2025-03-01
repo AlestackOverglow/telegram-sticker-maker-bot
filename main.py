@@ -8,9 +8,15 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+from aiohttp import web
 from contextlib import suppress
+from dotenv import load_dotenv
 
-from config import BOT_TOKEN, SUPPORTED_IMAGE_FORMATS, SUPPORTED_VIDEO_FORMATS
+from config import (
+    BOT_TOKEN, WEBHOOK_PATH, APP_HOST, APP_PORT,
+    SUPPORTED_IMAGE_FORMATS, SUPPORTED_VIDEO_FORMATS
+)
 from keyboards import get_start_keyboard, get_processing_keyboard
 from utils.media_processor import MediaProcessor
 from utils.logger import setup_logger
@@ -41,9 +47,42 @@ def cleanup_temp_files():
             logger.error(f"Error removing temp file {file_path}: {e}")
     TEMP_FILES.clear()
 
-async def shutdown(dispatcher: Dispatcher):
-    """Correct termination of the bot"""
+async def wait_for_webhook_url():
+    """Wait until WEBHOOK_URL appears in .env file"""
+    while True:
+        # Reload .env file
+        load_dotenv(override=True)
+        webhook_url = os.getenv("WEBHOOK_URL")
+        
+        if webhook_url:
+            logger.info(f"WEBHOOK_URL found: {webhook_url}")
+            return webhook_url
+        
+        logger.info("Waiting for WEBHOOK_URL to be set in .env file...")
+        await asyncio.sleep(5)  # Check every 5 seconds
+
+async def on_startup(bot: Bot):
+    """Set webhook on startup"""
+    logger.info("Setting webhook...")
+    # Wait for WEBHOOK_URL if not set
+    webhook_url = os.getenv("WEBHOOK_URL")
+    if not webhook_url:
+        logger.info("WEBHOOK_URL not found in .env file. Waiting...")
+        webhook_url = await wait_for_webhook_url()
+    
+    await bot.set_webhook(
+        url=f"{webhook_url}{WEBHOOK_PATH}",
+        drop_pending_updates=True
+    )
+    logger.info(f"Webhook has been set to: {webhook_url}{WEBHOOK_PATH}")
+
+async def on_shutdown(bot: Bot, dispatcher: Dispatcher):
+    """Cleanup on shutdown"""
     logger.info("Bot shutdown...")
+    
+    # Remove webhook
+    logger.info("Removing webhook...")
+    await bot.delete_webhook()
     
     # Clearing temporary files
     cleanup_temp_files()
@@ -207,22 +246,47 @@ async def process_emoji_file(message: types.Message):
     await process_media(message, is_sticker=False)
 
 async def main():
-    """Start the bot"""
-    # Настраиваем обработку сигнала SIGINT (Ctrl+C)
+    """Start the bot with webhook"""
+    # Create aiohttp application
+    app = web.Application()
+    
+    # Create a request handler and include it in the application
+    webhook_requests_handler = SimpleRequestHandler(
+        dispatcher=dp,
+        bot=bot,
+        secret_token=BOT_TOKEN[:50]  # Use first 50 chars of token as secret
+    )
+    webhook_requests_handler.register(app, path=WEBHOOK_PATH)
+    
+    # Setup handlers
+    setup_application(app, dp, bot=bot)
+    
+    # Setup startup and shutdown handlers
+    dp.startup.register(on_startup)
+    dp.shutdown.register(on_shutdown)
+    
+    # Setup signal handlers
     def signal_handler(sig, frame):
-        """Обработчик сигнала SIGINT"""
-        logger.info("Получен сигнал на завершение...")
-        asyncio.create_task(shutdown(dp))
+        """Handle SIGINT signal"""
+        logger.info("Received termination signal...")
+        asyncio.create_task(on_shutdown(bot, dp))
         sys.exit(0)
     
-    # Регистрируем обработчик сигнала
     signal.signal(signal.SIGINT, signal_handler)
     
+    # Start the server
+    logger.info(f"Starting webhook server on {APP_HOST}:{APP_PORT}")
     try:
-        logger.info("The bot is running. To stop, press Ctrl+C")
-        await dp.start_polling(bot)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, APP_HOST, APP_PORT)
+        await site.start()
+        
+        logger.info("Bot is running. Waiting for updates...")
+        # Run forever
+        await asyncio.Event().wait()
     finally:
-        await shutdown(dp)
+        await on_shutdown(bot, dp)
 
 if __name__ == "__main__":
     asyncio.run(main()) 

@@ -40,4 +40,9 @@ ANIMATED_IMAGE_FORMATS = ['.gif', '.mp4', '.webm', '.avi']
 
 # Supported formats
 SUPPORTED_IMAGE_FORMATS = ['.jpg', '.jpeg', '.png', '.webp']
-SUPPORTED_VIDEO_FORMATS = ['.mp4', '.webm'] 
+SUPPORTED_VIDEO_FORMATS = ['.mp4', '.webm']
+
+# Webhook settings
+WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
+APP_HOST = "0.0.0.0"  # Listen on all available network interfaces
+APP_PORT = 8000  # Port to run the webhook server on 
