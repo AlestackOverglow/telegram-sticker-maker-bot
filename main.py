@@ -37,6 +37,9 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
+# Create secret token from bot token (only alphanumeric chars)
+SECRET_TOKEN = ''.join(c for c in BOT_TOKEN if c.isalnum())[:50]
+
 def cleanup_temp_files():
     """Cleaning temporary files"""
     for file_path in TEMP_FILES:
@@ -73,7 +76,7 @@ async def on_startup(bot: Bot):
     await bot.set_webhook(
         url=f"{webhook_url}{WEBHOOK_PATH}",
         drop_pending_updates=True,
-        secret_token=BOT_TOKEN[:50]  # Use same secret token as in handler
+        secret_token=SECRET_TOKEN
     )
     logger.info(f"Webhook has been set to: {webhook_url}{WEBHOOK_PATH}")
 
@@ -255,7 +258,7 @@ async def main():
     webhook_requests_handler = SimpleRequestHandler(
         dispatcher=dp,
         bot=bot,
-        secret_token=BOT_TOKEN[:50]  # Use first 50 chars of token as secret
+        secret_token=SECRET_TOKEN
     )
     webhook_requests_handler.register(app, path=WEBHOOK_PATH)
     
