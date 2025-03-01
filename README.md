@@ -6,6 +6,27 @@ This bot is designed with a session-based workflow: after choosing between stick
 
 If you find this project helpful, please consider giving it a star ⭐ It helps others discover the project and motivates further development.
 
+## Branches
+The bot has two versions available in different branches:
+- `main` - Uses polling method to receive updates (recommended for development and testing)
+- `webhook-version` - Uses webhook method to receive updates (recommended for production)
+
+### Polling vs Webhook
+- **Polling (main branch)**: 
+  - Simpler to set up and debug
+  - Works without public IP/domain
+  - Suitable for development and testing
+  - Higher resource usage due to constant requests
+
+- **Webhook (webhook-version branch)**:
+  - More efficient resource usage
+  - Faster message processing
+  - Requires HTTPS and public IP/domain
+  - Better for production deployment
+  - Supports dynamic webhook URL configuration
+
+Choose the branch that best suits your needs before proceeding with installation.
+
 ## Table of Contents
 - [Requirements](#requirements)
 - [Installation](#installation)
