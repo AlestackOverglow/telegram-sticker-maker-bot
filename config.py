@@ -45,4 +45,4 @@ SUPPORTED_VIDEO_FORMATS = ['.mp4', '.webm']
 # Webhook settings
 WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
 APP_HOST = "0.0.0.0"  # Listen on all available network interfaces
-APP_PORT = 8000  # Port to run the webhook server on 
+APP_PORT = int(os.getenv("PORT", "8000"))  # Get port from environment or use 8000 as default 
