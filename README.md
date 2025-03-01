@@ -6,6 +6,27 @@ This bot is designed with a session-based workflow: after choosing between stick
 
 If you find this project helpful, please consider giving it a star ⭐ It helps others discover the project and motivates further development.
 
+## Branches
+The bot has two versions available in different branches:
+- `main` - Uses polling method to receive updates (recommended for development and testing)
+- `webhook-version` - Uses webhook method to receive updates (recommended for production)
+
+### Polling vs Webhook
+- **Polling (main branch)**: 
+  - Simpler to set up and debug
+  - Works without public IP/domain
+  - Suitable for development and testing
+  - Higher resource usage due to constant requests
+
+- **Webhook (webhook-version branch)**:
+  - More efficient resource usage
+  - Faster message processing
+  - Requires HTTPS and public IP/domain
+  - Better for production deployment
+  - Supports dynamic webhook URL configuration
+
+Choose the branch that best suits your needs before proceeding with installation.
+
 ## Table of Contents
 - [Requirements](#requirements)
 - [Installation](#installation)
@@ -22,6 +43,10 @@ If you find this project helpful, please consider giving it a star ⭐ It helps 
 - Python 3.8+
 - OpenCV (for video processing)
 - Required Python packages (see requirements.txt)
+- For webhook version:
+  - Public IP or domain
+  - SSL certificate (required by Telegram)
+  - Open port (default: 8000)
 
 ## Installation
 1. Clone the repository:
@@ -30,7 +55,16 @@ git clone https://github.com/AlestackOverglow/telegram-sticker-maker-bot.git
 cd telegram-sticker-maker-bot
 ```
 
-2. Create and activate virtual environment (recommended):
+2. Switch to desired branch:
+```bash
+# For polling version (default):
+git checkout main
+
+# For webhook version:
+git checkout webhook-version
+```
+
+3. Create and activate virtual environment (recommended):
 ```bash
 python -m venv venv
 # On Windows:
@@ -39,14 +73,19 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-3. Install dependencies:
+4. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Create `.env` file with your bot token:
-```
+5. Create `.env` file with required settings:
+```bash
+# For polling version:
 BOT_TOKEN=your_bot_token_here
+
+# For webhook version:
+BOT_TOKEN=your_bot_token_here
+WEBHOOK_URL=https://your-domain.com  # Optional: can be set after bot startup
 ```
 
 ## Usage
@@ -55,7 +94,12 @@ BOT_TOKEN=your_bot_token_here
 python main.py
 ```
 
-2. In Telegram:
+2. For webhook version:
+   - The bot will start a web server on port 8000 (configurable in config.py)
+   - If WEBHOOK_URL is not set in .env, the bot will wait until you add it
+   - Once WEBHOOK_URL is set, the bot will configure the webhook automatically
+
+3. In Telegram:
    - Send `/start` to begin
    - Choose between creating a sticker or emoji
    - Send any supported media file
@@ -125,6 +169,10 @@ ExecStart=/path/to/telegram-sticker-maker-bot/venv/bin/python main.py
 Restart=always
 RestartSec=10
 
+# For webhook version, you might want to add these environment variables:
+Environment=WEBHOOK_URL=https://your-domain.com
+Environment=BOT_TOKEN=your_bot_token_here
+
 [Install]
 WantedBy=multi-user.target
 ```
@@ -147,6 +195,29 @@ sudo journalctl -u stickmaker -f
 
 # Bot logs
 tail -f /path/to/telegram-sticker-maker-bot/logs/bot.log
+```
+
+6. For webhook version, make sure:
+   - Your domain points to the server's IP
+   - SSL certificate is properly configured
+   - Port 8000 (or your configured port) is open in firewall
+   - Nginx or another reverse proxy is set up if needed
+
+Example Nginx configuration for webhook:
+```nginx
+server {
+    listen 443 ssl;
+    server_name your-domain.com;
+
+    ssl_certificate /path/to/cert.pem;
+    ssl_certificate_key /path/to/privkey.pem;
+
+    location /webhook/your-bot-token {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
 ```
 
 ## Contributing
