@@ -1,9 +1,10 @@
 import logging
 import os
+import sys
 from logging.handlers import RotatingFileHandler
 
 def setup_logger():
-    """Configuring a logger with file rotation"""
+    """Configuring a logger with file rotation and console output"""
     # Create a directory for logs if it does not exist
     log_dir = "logs"
     if not os.path.exists(log_dir):
@@ -28,9 +29,16 @@ def setup_logger():
     )
     file_handler.setFormatter(formatter)
     
+    # Create console handler
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    
     # Setting up the root logger
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
+    
+    # Add both handlers
     logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
     
     return logger 
