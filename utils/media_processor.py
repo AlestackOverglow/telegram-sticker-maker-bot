@@ -122,22 +122,44 @@ class MediaProcessor:
                 background.paste(img, mask=img.split()[3])
                 img = background
 
-            # Calculate new dimensions (both sides must be <= max size)
+            # Get current dimensions
             width, height = img.size
             logger.info(f"Current dimensions: {width}x{height}")
-            logger.info(f"Target max dimensions: {target_params['width']}x{target_params['height']}")
             
-            if width > target_params['width'] or height > target_params['height']:
-                # Find the scaling factor
-                ratio = min(
-                    target_params['width'] / width,
-                    target_params['height'] / height
-                )
-                new_width = int(width * ratio)
-                new_height = int(height * ratio)
-                logger.info(f"Resizing to: {new_width}x{new_height}")
-                # Resize image
-                img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            # Check if we need to resize
+            max_side = max(width, height)
+            target_size = target_params['width']  # 512 for stickers
+            
+            if max_side != target_size:
+                # Calculate scaling ratio to make the larger side exactly 512
+                ratio = target_size / max_side
+                
+                # Calculate new dimensions
+                new_width = width * ratio
+                new_height = height * ratio
+                
+                # Round to nearest integer
+                new_width_int = round(new_width)
+                new_height_int = round(new_height)
+                
+                logger.info(f"Calculated dimensions before rounding: {new_width}x{new_height}")
+                logger.info(f"Rounded dimensions: {new_width_int}x{new_height_int}")
+                
+                # Check if rounding caused the larger side to exceed 512
+                if max(new_width_int, new_height_int) > target_size:
+                    # If exceeded, we'll use floor instead of round for the larger side
+                    if new_width_int > new_height_int:
+                        new_width_int = int(new_width)
+                        # Recalculate height with the exact same ratio
+                        new_height_int = round(new_width_int * (height / width))
+                    else:
+                        new_height_int = int(new_height)
+                        # Recalculate width with the exact same ratio
+                        new_width_int = round(new_height_int * (width / height))
+                
+                logger.info(f"Final dimensions after adjustment: {new_width_int}x{new_height_int}")
+                # Resize image using high-quality Lanczos resampling
+                img = img.resize((new_width_int, new_height_int), Image.Resampling.LANCZOS)
             
             # Save processed image
             output_path = f"{os.path.splitext(self.file_path)[0]}_processed.{target_params['format'].lower()}"
@@ -396,29 +418,38 @@ class MediaProcessor:
                 logger.error(f"Unsupported format: {file_ext}")
                 raise ValueError(f"Unsupported file format: {file_ext}")
             
-            logger.info("Checking size requirements")
-            if not self.check_size_requirements():
-                logger.info("File needs resizing")
+            # Get target parameters
+            target_params = self.get_target_params()
+            current_ext = os.path.splitext(self.file_path)[1].lower()
+            target_ext = f".{target_params['format'].lower()}"
+            
+            # Check if format conversion is needed
+            needs_format_conversion = current_ext != target_ext
+            
+            # Process file if format conversion needed or it's animated
+            if needs_format_conversion or self.is_animated:
+                logger.info("Format conversion needed or file is animated")
                 if self.is_animated:
                     logger.info("Processing animated file")
                     return self.process_animated(), True
                 else:
-                    logger.info("Processing static image")
+                    logger.info("Processing static image for format conversion")
                     return self.process_static_image(), True
             
-            # If the size is right, but the format is wrong - we still convert
-            target_params = self.get_target_params()
-            current_ext = os.path.splitext(self.file_path)[1].lower()
-            target_ext = f".{target_params['format'].lower()}"
-            logger.info(f"Current extension: {current_ext}, Target extension: {target_ext}")
-            
-            if current_ext != target_ext:
-                logger.info("Format conversion needed")
-                if self.is_animated:
-                    logger.info("Processing animated file for format conversion")
-                    return self.process_animated(), True
-                else:
-                    logger.info("Processing static image for format conversion")
+            # For static images, first check and adjust resolution if needed
+            if not self.is_animated:
+                img = Image.open(self.file_path)
+                width, height = img.size
+                max_side = max(width, height)
+                target_size = target_params['width']
+                
+                if max_side != target_size:
+                    logger.info("Resolution adjustment needed")
+                    return self.process_static_image(), True
+                
+                # If resolution is correct, check file size
+                if not self.check_size_requirements():
+                    logger.info("File needs optimization for size")
                     return self.process_static_image(), True
             
             logger.info("No processing needed")
