@@ -95,7 +95,7 @@ python main.py
 ```
 
 2. For webhook version:
-   - The bot will start a web server on port 8000 (configurable in config.py)
+   - The bot will start a web server on port 443 (configurable in config.py)
    - If WEBHOOK_URL is not set in .env, the bot will wait until you add it
    - Once WEBHOOK_URL is set, the bot will configure the webhook automatically
 
@@ -200,7 +200,7 @@ tail -f /path/to/telegram-sticker-maker-bot/logs/bot.log
 6. For webhook version, make sure:
    - Your domain points to the server's IP
    - SSL certificate is properly configured
-   - Port 8000 (or your configured port) is open in firewall
+   - Port 443 (or your configured port) is open in firewall
    - Nginx or another reverse proxy is set up if needed
 
 Example Nginx configuration for webhook:
@@ -213,7 +213,7 @@ server {
     ssl_certificate_key /path/to/privkey.pem;
 
     location /webhook/your-bot-token {
-        proxy_pass http://localhost:8000;
+        proxy_pass http://localhost:443;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
