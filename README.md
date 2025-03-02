@@ -46,7 +46,7 @@ Choose the branch that best suits your needs before proceeding with installation
 - For webhook version:
   - Public IP or domain
   - SSL certificate (required by Telegram)
-  - Open port (default: 8000)
+  - Open port (default: 443)
 
 ## Installation
 1. Clone the repository:
