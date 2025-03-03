@@ -208,14 +208,14 @@ async def process_emoji_file(message: types.Message):
 
 async def main():
     """Start the bot"""
-    # Настраиваем обработку сигнала SIGINT (Ctrl+C)
+    # Configure SIGINT signal processing (Ctrl+C)
     def signal_handler(sig, frame):
         """Обработчик сигнала SIGINT"""
         logger.info("Получен сигнал на завершение...")
         asyncio.create_task(shutdown(dp))
         sys.exit(0)
     
-    # Регистрируем обработчик сигнала
+    # Register the signal handler
     signal.signal(signal.SIGINT, signal_handler)
     
     try:
